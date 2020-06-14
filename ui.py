@@ -7,7 +7,7 @@ from typing import List
 from fsutils import FileInfo
 
 BOTTOM_BUTTONS = {
-    "F1": "Help",
+    #"F1": "Help",
     "F4": "Edit",
     "F5": "Copy",
     "F6": "RenMov",
@@ -132,10 +132,10 @@ def rectangle(win, begin_y, begin_x, height, width):
     win.refresh()
 
 
-def message_box(title, message, cp_id, text_attr):
+def message_box(stdscr, title, message, cp_id, text_attr):
     init_box_cp()
 
-    maxy, maxx = curses.LINES, curses.COLS
+    maxy, maxx = stdscr.getmaxyx()
     nlines = message.count('\n') + 7
     ncols = int(maxx/2)
     begin_y = int((maxy/2) - nlines/2)
@@ -150,6 +150,8 @@ def message_box(title, message, cp_id, text_attr):
         title = " " + title + " "
         win.addstr(1, int(x / 2 - len(title) / 2), title, text_attr)
     for (i, msg) in enumerate(message.split('\n')):
+        if len(msg) > ncols - 8:
+            msg = "..." + msg[len(msg) - ncols + 8:]
         win.addstr(i+2, 3, msg, text_attr)
 
     win.keypad(1)
@@ -172,8 +174,8 @@ def left_right_key_event_handler(win, max, focus, enterKey):
     return focus, enterKey
 
 
-def confirm_box(title, message, cp_norm_id, cp_sel_id, text_attr, buttons):
-    win = message_box(title, message, cp_norm_id, text_attr)
+def confirm_box(stdscr, title, message, cp_norm_id, cp_sel_id, text_attr, buttons):
+    win = message_box(stdscr, title, message, cp_norm_id, text_attr)
     y, x = win.getmaxyx()
     focus = 0
     enterKey = False
@@ -189,25 +191,25 @@ def confirm_box(title, message, cp_norm_id, cp_sel_id, text_attr, buttons):
     return buttons[focus]
 
 
-def confirm_box_alert(title, message):
-    return confirm_box(title, message, BOX_ALERT_CP, BOX_NORM_CP, curses.A_BOLD, ["OK", "Cancel"])
+def confirm_box_alert(stdscr, title, message):
+    return confirm_box(stdscr, title, message, BOX_ALERT_CP, BOX_NORM_CP, curses.A_BOLD, ["OK", "Cancel"])
 
 
-def confirm_box_norm(title, message):
-    return confirm_box(title, message, BOX_NORM_CP, BOX_SEL_CP, curses.A_NORMAL, ["OK", "Cancel"])
+def confirm_box_norm(stdscr, title, message):
+    return confirm_box(stdscr, title, message, BOX_NORM_CP, BOX_SEL_CP, curses.A_NORMAL, ["OK", "Cancel"])
 
 
-def info_box_alert(title, message):
-    return confirm_box(title, message, BOX_ALERT_CP, BOX_NORM_CP, curses.A_BOLD, ["OK"])
+def info_box_alert(stdscr, title, message):
+    return confirm_box(stdscr, title, message, BOX_ALERT_CP, BOX_NORM_CP, curses.A_BOLD, ["OK"])
 
 
-def info_box_norm(title, message):
-    return confirm_box(title, message, BOX_NORM_CP, BOX_SEL_CP, curses.A_NORMAL, ["OK"])
+def info_box_norm(stdscr, title, message):
+    return confirm_box(stdscr, title, message, BOX_NORM_CP, BOX_SEL_CP, curses.A_NORMAL, ["OK"])
 
 
-def input_box(title, message):
+def input_box(stdscr, title, message):
     text_attr = curses.A_NORMAL
-    win = message_box(title, message, BOX_NORM_CP, text_attr)
+    win = message_box(stdscr, title, message, BOX_NORM_CP, text_attr)
     curses.curs_set(1)
     win.attron(text_attr)
     y, x = win.getmaxyx()
@@ -234,9 +236,9 @@ def input_box(title, message):
     return input
 
 
-def task_run_box(title, message, task):
+def task_run_box(stdscr, title, message, task):
     text_attr = curses.A_NORMAL
-    win = message_box(title, message, BOX_NORM_CP, text_attr)
+    win = message_box(stdscr, title, message, BOX_NORM_CP, text_attr)
     y, x = win.getmaxyx()
     syms = ["|", "/", "-", "\\"]
     task_runner.submit_task(task)
@@ -250,25 +252,23 @@ def task_run_box(title, message, task):
         time.sleep(0.3)
     task_result = task_runner.get_result()
     if task_runner.get_err_code() == 1:
-        info_box_alert("Error", "Task execution was failed. \n " + str(task_result))
+        info_box_alert(stdscr, "Error", "Task execution was failed. \n " + str(task_result))
     return task_result
 
 
-def file_box(title: str, is_active: bool, is_left: bool, files: List[FileInfo], selectedFile: FileInfo, markedFiles: List[FileInfo]):
+def file_box(stdscr, title: str, is_active: bool, is_left: bool, files: List[FileInfo], selectedFile: FileInfo, markedFiles: List[FileInfo]):
     init_box_cp()
     cp_id = PANEL_FOLDER_CP
     text_attr = curses.A_BOLD
-
-    # maxy, maxx = curses.LINES, curses.COLS
-    nlines = curses.LINES - 5
-    ncols = int((curses.COLS - 1)/2)
+    maxy, maxx = stdscr.getmaxyx()
+    nlines = maxy - 5
+    ncols = int(maxx/2)
 
     if len(title) > ncols - 10:
         title = "..." + title[10:]
 
-    # win = curses.newwin(nlines, ncols, 2, 2)
-    left = 1 if is_left else ncols + 1
-    win = curses.newwin(nlines, ncols, 1, left)
+    left = 0 if is_left else ncols - 1
+    win = curses.newwin(nlines, ncols, 1, left + 1)
     win.bkgd(' ', curses.color_pair(cp_id))
     rectangle(win, 1, 1, nlines - 3, ncols - 3)
     y, x = win.getmaxyx()
@@ -306,8 +306,8 @@ def file_box(title: str, is_active: bool, is_left: bool, files: List[FileInfo], 
 
 def status_bar(stdscr, message):
     init_box_cp()
-    nlines = curses.LINES
-    ncols = curses.COLS
+    nlines, ncols = stdscr.getmaxyx()
+    message = message + " "*(ncols - len(message)-3)
     stdscr.addstr(nlines-2, 0, message, curses.color_pair(STBAR_CP))
     button_len = int(ncols / len(BOTTOM_BUTTONS))
 
@@ -346,10 +346,12 @@ def test():
         #r = confirm_box_norm("Hello", "World! \n Is \n a \n perfect \n place \n to \n live")
         #r = input_box(
         #    "Hello", "World! \n Is \n a \n perfect \n place \n to \n live")
-        # r = task_run_box("Hello", "World! \n Is \n a \n perfect \n place \n to \n live", dummy_task)
+        #r = task_run_box(stdscr, "Hello", "World! \n Is \n a \n perfect \n place \n to \n live", dummy_task)
         #r = task_run_box("Hello", "World! \n Is \n a \n perfect \n place \n to \n live", dummy_failing_task)
-        r = file_box("Hello", False, True, files, files[3], files[6:10])
-        r = file_box("Hello", True, False, files, files[3], files[6:10])
+        #r = file_box(stdscr, "Hello", False, True, files, files[3], files[6:10])
+        #r = file_box(stdscr, "Hello", True, False, files, files[3], files[6:10])
+
+        r = stdscr.getch()
 
         curses.endwin()
         print(r)

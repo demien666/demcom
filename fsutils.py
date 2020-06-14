@@ -82,7 +82,8 @@ def list_dir_full(path) -> List[FileInfo]:
                   key=lambda finf: str(finf.select_order) + finf.file_name)
 
 
-def create_folder(path):
+def create_folder(path, folder):
+    path = file_plus_folder(path, folder)
     result_message = "Successfully created the directory %s " % path
     try:
         os.mkdir(path)
@@ -91,35 +92,42 @@ def create_folder(path):
     return result_message
 
 
-def copy_files(src_folder: str, src_files: List[str], dst: str):
+def copy_files(src_folder: str, src_files: List[str], dst_folder: str):
     for f in src_files:
         try:
-            src = src_folder + "/" + f
-            shutil.copytree(src, dst)
+            src = file_plus_folder(src_folder, f)
+            dst = file_plus_folder(dst_folder, f)
+            if os.path.isdir(src):
+                shutil.copytree(src, dst, symlinks=False, ignore=None)
+            else:
+                shutil.copy2(src, dst)
         except OSError as exc:
             if exc.errno == errno.ENOTDIR:
                 shutil.copy(src, dst)
             else:
                 raise
+    return "Copy operation completed"
 
 
-def move_files(src_folder: str, src_files: List[str], dst: str):
+def move_files(src_folder: str, src_files: List[str], dst_folder: str):
     for f in src_files:
         try:
-            src = src_folder + "/" + f
+            src = file_plus_folder(src_folder, f)
+            dst = file_plus_folder(dst_folder, f)
             shutil.move(src, dst)
         except OSError as exc:
             if exc.errno == errno.ENOTDIR:
-                shutil.move(src, dst)
+                shutil.copy(src, dst)
             else:
                 raise
+    return "Move operation completed"    
 
 
 def remove_folder(path):
     result_message = "Successfully removed %s " % path
     try:
         path = pathlib.Path(path)
-        print("Removing:", path)
+        # print("Removing:", path)
         for item in path.iterdir():
             if item.is_dir():
                 # print(item)
@@ -143,6 +151,18 @@ def file_plus_folder(folder, file):
 
 def get_parent_folder(path):
     return str(pathlib.Path(path).parent)
+
+
+def get_working_folder():
+    return str(pathlib.Path(__file__).parent.absolute())
+
+
+def run_shell_command(cmd):
+    os.system(cmd)
+
+
+def rename(folder, old_name, new_name):
+    os.rename(file_plus_folder(folder, old_name), file_plus_folder(folder, new_name))
 
 
 def test():

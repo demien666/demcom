@@ -81,7 +81,7 @@ class FileList():
 
     def get_path_with_selected(self) -> str:
         selected = self.get_selected_file()
-        return self.__path + "/" + selected.file_name
+        return file_plus_folder(self.__path, selected.file_name)
 
     def mark(self) -> List[FileInfo]:
         selected = self.get_selected_file()
@@ -115,13 +115,6 @@ class DoubleList():
         else:
             self.__active = self.__left_list
 
-    def get_files(self, height):
-        l_files, l_selected, l_marked = self.__left_list.get_files(height)
-        r_files, r_selected, r_marked = self.__right_list.get_files(height)
-        return self.left_is_active(),\
-            l_files, l_selected, l_marked,\
-            r_files, r_selected, r_marked
-
     def get_current_path(self):
         return self.__active.get_path()
 
@@ -129,13 +122,14 @@ class DoubleList():
         return self.__active.get_path_with_selected()
 
     def refresh(self):
-        self.__active.refresh()
+        self.__left_list.refresh()
+        self.__right_list.refresh()
 
     def get_active(self) -> FileList:
         return self.__active
 
     def get_inactive(self) -> FileList:
-        return self.__right_list if self.left_is_active else self.__left_list
+        return self.__right_list if self.left_is_active() else self.__left_list
 
     def get_left(self) -> FileList:
         return self.__left_list
