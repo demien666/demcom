@@ -7,4 +7,9 @@ It provides basic functionality as of file manager:
 3. delete file
 4. rename file
 
-![alt text](https://github.com/demien666/demcom/blob/master/screenshot.jpg?raw=true)
+At linux env it should work out of the box. At windows - courses lilbrary has to be installed: 
+   pip install windows-curses
+
+Screenshot:
+
+![alt text](https://github.com/demien666/demcom/blob/work/screenshot.jpg?raw=true)
