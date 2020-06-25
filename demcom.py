@@ -11,7 +11,7 @@ EDITOR_COMMAND: str = "code $1 &"
 CANC = lambda op: op + " operation was canceled"
 FCR_LBL = "Folder creation"
 FCR_MSG = "Enter folder name:"
-FCR_MSG_N = FCR_MSG + " %"
+FCR_MSG_N = FCR_MSG + " %s"
 FCR_CANC = CANC(FCR_MSG)
 
 DEL_LBL = "Delete"
@@ -43,14 +43,14 @@ KEY_F8 = 272
 KEY_F10 = 274
 
 
-def try_op(op, message):
+def try_op(stdscr, op, message):
     result = message
     try:
         op()
     except:
         e = sys.exc_info()[0]
         result = "Error with operation: [" + message + "]"
-        ui.info_box_alert(result, str(e))
+        ui.info_box_alert(stdscr, result, str(e))
     return result
 
 
@@ -98,7 +98,7 @@ def show_main_screen(stdscr):
         elif k == KEY_ENTER:  # ENTER
             fun = double_list.get_active().folder_down
             msg = "Entering folder: " + double_list.get_active().get_selected_file().file_name
-            statusbarstr = try_op(fun, msg)
+            statusbarstr = try_op(stdscr, fun, msg)
         elif k == KEY_PAGE_DOWN:  # PG DOWN
             double_list.get_active().page_down(file_list_height)
         elif k == KEY_PAGE_UP:  # PG UP
@@ -126,7 +126,8 @@ def show_main_screen(stdscr):
             double_list.get_active().down(file_list_height)
         elif k == KEY_F5:  # F5
             _from = active_path_selected if not active_is_marked else active_marked_info
-            confirm_result = ui.confirm_box_norm(stdscr, COPY_LBL, COPY_ASK % (_from, inactive_path))
+            copy_info = COPY_ASK % (_from, inactive_path)
+            confirm_result = ui.confirm_box_norm(stdscr, COPY_LBL, copy_info)
             if confirm_result == "OK":
                 statusbarstr = str(ui.task_run_box(stdscr, COPY_LBL, copy_info, copy))
                 double_list.refresh()
@@ -154,7 +155,7 @@ def show_main_screen(stdscr):
                 double_list.refresh()
 
         if op_lambda is not None:
-            statusbarstr = try_op(op_lambda, op_msg)
+            statusbarstr = try_op(stdscr, op_lambda, op_msg)
             double_list.refresh()
 
         left_is_active = double_list.left_is_active()

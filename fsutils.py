@@ -60,7 +60,9 @@ def hr_size(size):
             result = lb
             size = size / K
 
-    return '{:03.3f}'.format(size) + result
+    result = '{:03.3f}'.format(size) + result
+    result = result.replace(".000", "")
+    return result
 
 
 def get_file_attributes(folder_path, file_name):
