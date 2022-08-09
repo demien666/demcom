@@ -78,8 +78,11 @@ def list_dir_full(path) -> List[FileInfo]:
     file_names = os.listdir(path)
     result = [FileInfo("..", False, "", "")]
     for f in file_names:
-        file_info = FileInfo(f, *get_file_attributes(path, f))
-        result.append(file_info)
+        try:
+            file_info = FileInfo(f, *get_file_attributes(path, f))
+            result.append(file_info)
+        except:
+            pass
     return sorted(result,
                   key=lambda finf: str(finf.select_order) + finf.file_name)
 
